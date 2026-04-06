@@ -1,17 +1,31 @@
 import express from 'express';
+import { upload } from '../utils/upload.util';
+import {
+  getUserProfile,
+  updateProfile,
+  toggleFollow,
+  getFollowing,
+  getFollowers,
+  getTopDesigners,
+} from '../controllers/user.controller';
+import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
-// 用户相关路由
+// 公开路由
+router.get('/top-designers', getTopDesigners);         // 热门设计师
+router.get('/:username', getUserProfile);              // 用户资料
+router.get('/:userId/following', getFollowing);        // 关注列表
+router.get('/:userId/followers', getFollowers);        // 粉丝列表
 
-router.get('/profile', (req, res) => {
-  // 获取用户个人资料
-  res.send('Get user profile');
-});
+// 需要登录的路由
+router.put(
+  '/profile',
+ authenticateToken,
+  upload.single('avatar'),       // 单张头像上传
+  updateProfile
+);
 
-router.put('/profile', (req, res) => {
-  // 更新用户个人资料
-  res.send('Update user profile');
-});
+router.post('/:userId/follow', authenticateToken, toggleFollow);
 
 export default router;
