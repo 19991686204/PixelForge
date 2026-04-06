@@ -1,12 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link,useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import Logo from '../components/logo';
+import { useAuth } from '../context/AuthContext';
 
 export default function Register(){
     const navigate = useNavigate();
-    const[formData,setFormData] = React.useState({
+    const { register } = useAuth();
+    
+    interface FormData {
+        username: string;
+        email: string;
+        password: string;
+        confirmPassword: string;
+        role: 'designer' | 'company';
+    }
+    
+    const[formData,setFormData] = React.useState<FormData>({
         username:'',
         email:"",
         password:'',
@@ -14,23 +24,22 @@ export default function Register(){
         role:'designer'//designer or company
     });
     const [error,setError] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
     const handleSubmit = async (e:React.FormEvent) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword){
             setError('Passwords do not match');
             return;
         }
+        setLoading(true);
+        setError('');
         try{
-            const response = await axios.post('http://localhost:5000/api/auth/register',{
-                username:formData.username,
-                email:formData.email,
-                password:formData.password,
-                role:formData.role
-            });
-           localStorage.setItem('token',response.data.token);
-           navigate('/dashboard');
+            await register(formData.username, formData.email, formData.password, formData.role);
+            navigate('/dashboard');
         }catch (err:any){
             setError(err.response?.data?.message || 'Registration failed');
+        }finally {
+            setLoading(false);
         }
     };
   return(

@@ -74,9 +74,11 @@ export default function Home(){
                             Get Started Free
                         </button>
                     </Link>
-                    <button className="px-8 py-4 border-indigo-500 text-indigo-500 text-lg font-semibold rounded-lg hover:bg-indigo-500/10 transition-all">
-                        View Examples
-                    </button>
+                    <Link to="/examples">
+                        <button className="px-8 py-4 border border-indigo-500 text-indigo-500 text-lg font-semibold rounded-lg hover:bg-indigo-500/10 transition-all">
+                            View Examples
+                        </button>
+                    </Link>
                 </motion.div>
 
                 {/*统计数据*/}

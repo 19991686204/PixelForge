@@ -1,5 +1,7 @@
+// 自定义Logo组件
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -16,7 +18,8 @@ export default function Logo({ size = 'md', animated = true }: LogoProps) {
   const { width, height, text } = sizes[size];
 
   return (
-    <div className="flex items-center gap-3">
+    <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+      <div className="flex items-center gap-3 cursor-pointer">
       {/* SVG Logo 图标 */}
       <motion.div
         initial={animated ? { rotate: 0, scale: 0.8 } : {}}
@@ -148,5 +151,6 @@ export default function Logo({ size = 'md', animated = true }: LogoProps) {
         </motion.span>
       </div>
     </div>
+    </Link>
   );
 }

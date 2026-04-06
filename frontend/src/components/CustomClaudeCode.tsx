@@ -1,3 +1,4 @@
+// 自定义ClaudeCode组件
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
