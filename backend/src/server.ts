@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 5000;
 
 // ========== 基础中间件 ==========
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || 'https://my-pixelforge.netlify.app',
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
