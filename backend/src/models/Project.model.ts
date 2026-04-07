@@ -16,6 +16,7 @@ export interface IProject extends Document {
   // 图片资源
   coverImage: string;     // 封面图
   images: string[];       // 项目图片集
+  videos: string[];       // 项目视频集
 
   // 关联用户（外键）
   designer: mongoose.Types.ObjectId;
@@ -119,11 +120,23 @@ const ProjectSchema = new Schema<IProject>(
       type: [String],
       required: true,
       validate: {
-        // 至少1张，最多20张
+        // 最多20张（允许0张，当只上传视频时）
         validator: function (v: string[]) {
-          return v.length >= 1 && v.length <= 20;
+          return v.length <= 20;
         },
-        message: 'Must have between 1 and 20 images',
+        message: 'Cannot have more than 20 images',
+      },
+    },
+
+    videos: {
+      type: [String],
+      default: [],
+      validate: {
+        // 最多5个视频
+        validator: function (v: string[]) {
+          return v.length <= 5;
+        },
+        message: 'Cannot have more than 5 videos',
       },
     },
 
@@ -140,20 +153,16 @@ const ProjectSchema = new Schema<IProject>(
     // ==================== 互动数据 ====================
     // likes 存储点赞用户的 ID 数组
     // 通过数组长度可以知道点赞数量
-    likes: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+    likes: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
+    },
 
     // saved 存储收藏用户的 ID 数组
-    saved: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+    saved: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
+    },
 
     views: {
       type: Number,

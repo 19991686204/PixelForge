@@ -1,7 +1,7 @@
 // 自定义Logo组件
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -9,6 +9,8 @@ interface LogoProps {
 }
 
 export default function Logo({ size = 'md', animated = true }: LogoProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const sizes = {
     sm: { width: 32, height: 32, text: 'text-xl' },
     md: { width: 48, height: 48, text: 'text-2xl' },
@@ -17,9 +19,18 @@ export default function Logo({ size = 'md', animated = true }: LogoProps) {
 
   const { width, height, text } = sizes[size];
 
+  const handleLogoClick = () => {
+    const isDashboardPage = location.pathname.startsWith('/dashboard/');
+    if (isDashboardPage) {
+      navigate('/');
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
-    <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div className="flex items-center gap-3 cursor-pointer">
+    <div onClick={handleLogoClick} style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+      <div className="flex items-center gap-3">
       {/* SVG Logo 图标 */}
       <motion.div
         initial={animated ? { rotate: 0, scale: 0.8 } : {}}
@@ -150,7 +161,7 @@ export default function Logo({ size = 'md', animated = true }: LogoProps) {
           Forge
         </motion.span>
       </div>
+      </div>
     </div>
-    </Link>
   );
 }

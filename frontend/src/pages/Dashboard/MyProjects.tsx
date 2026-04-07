@@ -1,6 +1,6 @@
 // 我的项目页面组件
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
@@ -8,12 +8,32 @@ import { useAuth } from '../../context/AuthContext';
 export default function MyProjects() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<any[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetchMyProjects();
   }, []);
+
+  useEffect(() => {
+    // 根据 URL 参数筛选项目
+    const type = searchParams.get('type') || 'all';
+    if (type === 'all') {
+      setFilteredProjects(projects);
+    } else if (type === 'images') {
+      setFilteredProjects(projects.filter(project => 
+        project.assetType === 'image' || 
+        (project.images?.length > 0 && (!project.videos || project.videos.length === 0))
+      ));
+    } else if (type === 'videos') {
+      setFilteredProjects(projects.filter(project => 
+        project.assetType === 'video' || 
+        (project.videos?.length > 0)
+      ));
+    }
+  }, [projects, searchParams]);
 
   const fetchMyProjects = async () => {
     try {
@@ -61,7 +81,7 @@ export default function MyProjects() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-1">My Projects</h1>
-          <p style={{ color: '#6b7280' }}>{projects.length} projects total</p>
+          <p style={{ color: '#6b7280' }}>{filteredProjects.length} projects total</p>
         </div>
         <Link to="/dashboard/upload">
           <button
@@ -73,7 +93,7 @@ export default function MyProjects() {
         </Link>
       </div>
 
-      {projects.length === 0 ? (
+      {filteredProjects.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">📁</div>
           <p className="text-xl font-semibold mb-2">No projects yet</p>
@@ -91,7 +111,7 @@ export default function MyProjects() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
+          {filteredProjects.map((project, index) => (
             <motion.div
               key={project._id}
               initial={{ opacity: 0, y: 20 }}

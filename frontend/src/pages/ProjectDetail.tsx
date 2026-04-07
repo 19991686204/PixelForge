@@ -15,6 +15,7 @@ const mockProjects = [
     tags: ['landscape', 'nature', 'photography'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1483486867/sample.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1483486867/sample.jpg'],
+    videos: [],
     tools: ['Photoshop', 'Lightroom'],
     designer: {
       _id: '1',
@@ -41,6 +42,7 @@ const mockProjects = [
     tags: ['coffee', 'still life', 'photography'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1483486867/coffee.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1483486867/coffee.jpg'],
+    videos: [],
     tools: ['Photoshop', 'Lightroom'],
     designer: {
       _id: '1',
@@ -67,6 +69,7 @@ const mockProjects = [
     tags: ['portrait', 'fashion', 'photography'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1483486867/woman.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1483486867/woman.jpg'],
+    videos: [],
     tools: ['Photoshop', 'Lightroom'],
     designer: {
       _id: '1',
@@ -93,6 +96,7 @@ const mockProjects = [
     tags: ['tree', 'nature', 'photography'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1483486867/tree.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1483486867/tree.jpg'],
+    videos: [],
     tools: ['Photoshop', 'Lightroom'],
     designer: {
       _id: '1',
@@ -119,6 +123,7 @@ const mockProjects = [
     tags: ['flower', 'nature', 'photography'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1483486867/flower.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1483486867/flower.jpg'],
+    videos: [],
     tools: ['Photoshop', 'Lightroom'],
     designer: {
       _id: '1',
@@ -145,6 +150,7 @@ const mockProjects = [
     tags: ['business', 'team', 'corporate'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1483486867/business.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1483486867/business.jpg'],
+    videos: [],
     tools: ['Photoshop', 'Lightroom'],
     designer: {
       _id: '1',
@@ -171,6 +177,7 @@ const mockProjects = [
     tags: ['ocean', 'waves', 'video'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1556710598/ocean_waves.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1556710598/ocean_waves.jpg'],
+    videos: ['https://res.cloudinary.com/demo/video/upload/v1556710598/ocean_waves.mp4'],
     tools: ['Premiere Pro', 'After Effects'],
     designer: {
       _id: '1',
@@ -197,6 +204,7 @@ const mockProjects = [
     tags: ['city', 'skyline', 'video'],
     coverImage: 'https://res.cloudinary.com/demo/image/upload/v1556710598/city_skyline.jpg',
     images: ['https://res.cloudinary.com/demo/image/upload/v1556710598/city_skyline.jpg'],
+    videos: ['https://res.cloudinary.com/demo/video/upload/v1556710598/city_skyline.mp4'],
     tools: ['Premiere Pro', 'After Effects'],
     designer: {
       _id: '1',
@@ -238,6 +246,7 @@ interface Project {
   tags: string[];
   coverImage: string;
   images: string[];
+  videos?: string[];
   tools?: string[];
   projectUrl?: string;
   designer: {
@@ -291,20 +300,30 @@ export default function ProjectDetail() {
 
   const fetchProject = async () => {
     try {
+      // 从本地存储获取状态
+      let likedProjects: string[] = [];
+      let savedProjects: string[] = [];
+      let followingDesigners: string[] = [];
+      
+      try {
+        likedProjects = JSON.parse(localStorage.getItem('likedProjects') || '[]');
+        savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
+        followingDesigners = JSON.parse(localStorage.getItem('followingDesigners') || '[]');
+      } catch (localStorageError) {
+        console.error('Failed to load state from localStorage:', localStorageError);
+      }
+      
       // 尝试从后端获取项目
       const response = await api.get(`/projects/${id}`);
       const data = response.data.data;
       setProject(data);
       setLikeCount(data.likes.length);
-      setIsLiked(user ? data.likes.includes(user.id) : false);
-      // 从本地存储获取收藏状态
-      try {
-        const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
-        setIsSaved(savedProjects.includes(id));
-      } catch (localStorageError) {
-        console.error('Failed to load saved state from localStorage:', localStorageError);
-        setIsSaved(false);
-      }
+      // 优先使用本地存储中的点赞状态
+      setIsLiked(id ? likedProjects.includes(id) : false);
+      // 使用本地存储中的收藏状态
+      setIsSaved(id ? savedProjects.includes(id) : false);
+      // 使用本地存储中的关注状态
+      setIsFollowing(followingDesigners.includes(data.designer._id));
     } catch (error) {
       console.error('Failed to fetch project:', error);
       // 后端没有找到项目，使用前端模拟数据
@@ -367,7 +386,7 @@ export default function ProjectDetail() {
   };
 
   const handleLike = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !id) {
       navigate('/login');
       return;
     }
@@ -375,8 +394,20 @@ export default function ProjectDetail() {
     try {
       // 尝试调用后端 API
       const response = await api.post(`/projects/${id}/like`);
-      setIsLiked(response.data.data.isLiked);
+      const newIsLiked = response.data.data.isLiked;
+      setIsLiked(newIsLiked);
       setLikeCount(response.data.data.likes);
+      
+      // 同时更新本地存储，确保状态持久化
+      try {
+        const likedProjects = JSON.parse(localStorage.getItem('likedProjects') || '[]');
+        const updatedLiked = newIsLiked
+          ? [...likedProjects, id]
+          : likedProjects.filter((projectId: string) => projectId !== id);
+        localStorage.setItem('likedProjects', JSON.stringify(updatedLiked));
+      } catch (localStorageError) {
+        console.error('Failed to update likedProjects in localStorage:', localStorageError);
+      }
     } catch (error) {
       console.error('Failed to toggle like:', error);
       // 后端 API 失败，更新本地存储
@@ -425,7 +456,7 @@ export default function ProjectDetail() {
 
   // 处理收藏
   const handleSave = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !id) {
       navigate('/login');
       return;
     }
@@ -434,7 +465,19 @@ export default function ProjectDetail() {
       // 尝试调用后端 API
       await api.post(`/projects/${id}/save`);
       // 由于后端 API 没有返回数据，我们直接切换状态
-      setIsSaved(!isSaved);
+      const newIsSaved = !isSaved;
+      setIsSaved(newIsSaved);
+      
+      // 同时更新本地存储，确保状态持久化
+      try {
+        const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
+        const updatedSaved = newIsSaved
+          ? [...savedProjects, id]
+          : savedProjects.filter((projectId: string) => projectId !== id);
+        localStorage.setItem('savedProjects', JSON.stringify(updatedSaved));
+      } catch (localStorageError) {
+        console.error('Failed to update savedProjects in localStorage:', localStorageError);
+      }
     } catch (error) {
       console.error('Failed to toggle save:', error);
       // 后端 API 失败，更新本地存储
@@ -584,7 +627,12 @@ export default function ProjectDetail() {
       {/* 顶部导航 */}
       <nav
         className="fixed top-0 w-full z-50 backdrop-blur-xl"
-        style={{ backgroundColor: 'rgba(10,10,10,0.9)', borderBottom: '1px solid #262626' }}
+        style={{ 
+          backgroundColor: 'rgba(10,10,10,0.9)', 
+          borderBottom: '1px solid #262626',
+          transition: 'all 0.3s ease',
+          overflow: 'visible',
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           {/* Logo */}
@@ -749,44 +797,110 @@ export default function ProjectDetail() {
             </div>
           </motion.div>
 
-          {/* 图片展示区 */}
+          {/* 图片和视频展示区 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="mb-10"
           >
-            {/* 主图 */}
+            {/* 主图/视频 */}
             <div className="rounded-2xl overflow-hidden mb-4">
               <AnimatePresence mode="wait">
-                <motion.img
-                  key={activeImage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  src={project.images[activeImage]}
-                  alt={`${project.title} - ${activeImage + 1}`}
-                  className="w-full"
-                />
+                {project.images[activeImage] && (
+                  <motion.img
+                    key={activeImage}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    src={project.images[activeImage]}
+                    alt={`${project.title} - ${activeImage + 1}`}
+                    className="w-full"
+                  />
+                )}
+                {project.videos && project.videos.length > 0 && (
+                  <motion.video
+                    key={`video-${activeImage}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    src={project.videos[activeImage - project.images.length]}
+                    className="w-full"
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                  />
+                )}
               </AnimatePresence>
             </div>
 
             {/* 缩略图列表 */}
-            {project.images.length > 1 && (
+            {(project.images.length > 1 || (project.videos && project.videos.length > 0)) && (
               <div className="flex gap-3 overflow-x-auto pb-2">
+                {/* 图片缩略图 */}
                 {project.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setActiveImage(index)}
-                    className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all"
+                    className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all relative"
                     style={{
                       border: `2px solid ${activeImage === index ? '#6366f1' : '#262626'}`,
                       opacity: activeImage === index ? 1 : 0.6,
                     }}
                   >
                     <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                    {activeImage === index && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
                   </button>
                 ))}
+                
+                {/* 视频缩略图 */}
+                {project.videos && project.videos.map((video, index) => {
+                  const videoIndex = project.images.length + index;
+                  return (
+                    <button
+                      key={`video-${index}`}
+                      onClick={() => setActiveImage(videoIndex)}
+                      className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all relative"
+                      style={{
+                        border: `2px solid ${activeImage === videoIndex ? '#6366f1' : '#262626'}`,
+                        opacity: activeImage === videoIndex ? 1 : 0.6,
+                      }}
+                    >
+                      <div className="w-full h-full flex items-center justify-center bg-black">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      {activeImage === videoIndex && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </motion.div>

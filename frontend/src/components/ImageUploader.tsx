@@ -5,12 +5,14 @@ interface ImageUploaderProps {
   onImagesChange: (files: File[]) => void;
   maxFiles?: number;
   maxSizeMB?: number;
+  allowVideos?: boolean;
 }
 
 export default function ImageUploader({
   onImagesChange,
   maxFiles = 20,
   maxSizeMB = 10,
+  allowVideos = false,
 }: ImageUploaderProps) {
   const [previews, setPreviews] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
@@ -26,7 +28,7 @@ export default function ImageUploader({
 
     // 验证文件数量
     if (files.length + fileArray.length > maxFiles) {
-      setError(`Maximum ${maxFiles} images allowed`);
+      setError(`Maximum ${maxFiles} files allowed`);
       return;
     }
 
@@ -35,8 +37,11 @@ export default function ImageUploader({
     const newPreviews: string[] = [];
 
     fileArray.forEach((file) => {
-      if (!file.type.startsWith('image/')) {
-        setError('Only image files are allowed');
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        setError(`Only image and video files are allowed`);
         return;
       }
 
@@ -46,7 +51,14 @@ export default function ImageUploader({
       }
 
       validFiles.push(file);
-      newPreviews.push(URL.createObjectURL(file));
+      
+      // 为视频生成预览
+      if (isVideo && allowVideos) {
+        const videoUrl = URL.createObjectURL(file);
+        newPreviews.push(videoUrl);
+      } else if (isImage) {
+        newPreviews.push(URL.createObjectURL(file));
+      }
     });
 
     const updatedFiles = [...files, ...validFiles];
@@ -78,6 +90,7 @@ export default function ImageUploader({
     const newFiles = files.filter((_, i) => i !== index);
     const newPreviews = previews.filter((_, i) => i !== index);
 
+    // 释放预览 URL
     URL.revokeObjectURL(previews[index]);
 
     setFiles(newFiles);
@@ -104,7 +117,7 @@ export default function ImageUploader({
           ref={inputRef}
           type="file"
           multiple
-          accept="image/*"
+          accept={allowVideos ? "image/*,video/*" : "image/*"}
           onChange={(e) => handleFiles(e.target.files)}
           className="hidden"
         />
@@ -131,7 +144,7 @@ export default function ImageUploader({
             {dragActive ? 'Drop images here' : 'Click to upload or drag and drop'}
           </p>
           <p className="text-sm" style={{ color: '#6b7280' }}>
-            PNG, JPG, GIF up to {maxSizeMB}MB (Max {maxFiles} images)
+            {allowVideos ? 'Images and videos' : 'Images'} up to {maxSizeMB}MB (Max {maxFiles} files)
           </p>
         </motion.div>
       </div>
@@ -159,39 +172,65 @@ export default function ImageUploader({
       {previews.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
           <AnimatePresence>
-            {previews.map((preview, index) => (
-              <motion.div
-                key={preview}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="relative aspect-square rounded-xl overflow-hidden group"
-                style={{ backgroundColor: '#1a1a1a' }}
-              >
-                <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+            {previews.map((preview, index) => {
+              const isVideo = files[index]?.type.startsWith('video/');
+              return (
+                <motion.div
+                  key={preview}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="relative aspect-square rounded-xl overflow-hidden group"
+                  style={{ backgroundColor: '#1a1a1a' }}
+                >
+                  {isVideo ? (
+                    <video src={preview} className="w-full h-full object-cover" muted playsInline />
+                  ) : (
+                    <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                  )}
 
-                {/* 删除按钮 */}
-                <button
-                  onClick={() => removeImage(index)}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ backgroundColor: 'rgba(239, 68, 68, 0.9)' }}
-               >
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>  
-               </button>
-                           {/* 图片序号 */}
-            <div
-              className="absolute bottom-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{ backgroundColor: 'rgba(99, 102, 241, 0.9)', color: '#ffffff' }}
-            >
-              {index + 1}
-            </div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+                  {/* 删除按钮 */}
+                  <button
+                    onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ backgroundColor: 'rgba(239, 68, 68, 0.9)' }}
+                  >
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  
+                  {/* 文件类型标签 */}
+                  {isVideo && (
+                    <div
+                      className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold"
+                      style={{ backgroundColor: 'rgba(99, 102, 241, 0.9)', color: '#ffffff' }}
+                    >
+                      VIDEO
+                    </div>
+                  )}
+                  
+                  {/* 文件大小 */}
+                  <div
+                    className="absolute bottom-2 left-2 px-2 py-1 rounded text-xs font-medium"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', color: '#ffffff' }}
+                  >
+                    {(files[index]?.size / 1024 / 1024).toFixed(2)}MB
+                  </div>
+                  
+                  {/* 文件序号 */}
+                  <div
+                    className="absolute bottom-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ backgroundColor: 'rgba(99, 102, 241, 0.9)', color: '#ffffff' }}
+                  >
+                    {index + 1}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
-  )}
-</div>
-  );}
-  
+  );
+}

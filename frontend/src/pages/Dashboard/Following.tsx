@@ -66,10 +66,11 @@ export default function Following() {
     try {
       // 尝试从后端取消关注
       await api.post(`/users/${userId}/follow`);
+      // 重新获取关注列表，确保数据实时更新
+      await fetchFollowing();
     } catch (error) {
       console.error('Failed to unfollow:', error);
-    } finally {
-      // 无论后端是否成功，都更新前端状态
+      // 即使失败，也从列表中移除该用户，保持UI一致性
       setFollowing(prev => prev.filter(u => u._id !== userId));
       
       // 更新本地存储

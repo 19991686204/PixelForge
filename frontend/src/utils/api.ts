@@ -2,7 +2,7 @@ import axios from 'axios';
 //创建axios实例
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  timeout: 10000,
+  timeout: 60000, // 60秒超时，用于处理大文件上传
 });
 //请求拦截器：自动添加token
 api.interceptors.request.use(
@@ -21,7 +21,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if(error.response.status === 401) {
+    if(error.response?.status === 401) {
         //token过期，清除登录状态
       localStorage.removeItem('token');
       localStorage.removeItem('user');

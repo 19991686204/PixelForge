@@ -98,5 +98,22 @@ export function useProjects(options: UseProjectsOptions = {}) {
     }
   };
 
-  return { projects, loading, error, hasMore, total, loadMore, toggleLike };
+  // 收藏
+  const toggleSave = async (projectId: string) => {
+    try {
+      const response = await api.post(`/projects/${projectId}/save`);
+      const { saved, isSaved } = response.data.data;
+
+      setProjects(prev => prev.map(p => {
+        if (p._id === projectId) {
+          return { ...p, saved: Array(saved).fill('') };
+        }
+        return p;
+      }));
+    } catch (err) {
+      console.error('Failed to toggle save:', err);
+    }
+  };
+
+  return { projects, loading, error, hasMore, total, loadMore, toggleLike, toggleSave };
 }

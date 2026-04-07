@@ -37,7 +37,8 @@ export default function UserProfile() {
     setFollowLoading(true);
     try {
       const response = await api.post(`/users/${profileData.user._id}/follow`);
-      setIsFollowing(response.data.data.isFollowing);
+      const isFollowing = response.data?.data?.isFollowing;
+      setIsFollowing(isFollowing);
 
       // 更新粉丝数
       setProfileData((prev: any) => ({
@@ -46,7 +47,7 @@ export default function UserProfile() {
           ...prev.user,
           stats: {
             ...prev.user.stats,
-            followers: prev.user.stats.followers + (response.data.data.isFollowing ? 1 : -1),
+            followers: (prev.user.stats?.followers || 0) + (isFollowing ? 1 : -1),
           },
         },
       }));
@@ -205,12 +206,12 @@ export default function UserProfile() {
 
             {/* 统计数据 */}
             <div className="grid grid-cols-4 gap-4 mt-6 max-w-sm">
-              {[
-                { label: 'Projects', value: user.stats?.projects || 0 },
-                { label: 'Followers', value: user.stats?.followers || 0 },
-                { label: 'Following', value: user.stats?.following || 0 },
-                { label: 'Likes', value: user.stats?.likes || 0 },
-              ].map(stat => (
+              {user && user.stats && ([
+                { label: 'Projects', value: user.stats.projects || 0 },
+                { label: 'Followers', value: user.stats.followers || 0 },
+                { label: 'Following', value: user.stats.following || 0 },
+                { label: 'Likes', value: user.stats.likes || 0 },
+              ] as const).map(stat => (
                 <div key={stat.label} className="text-center">
                   <div className="text-xl font-bold" style={{ color: '#6366f1' }}>
                     {stat.value}

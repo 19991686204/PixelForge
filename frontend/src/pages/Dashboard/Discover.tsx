@@ -16,7 +16,7 @@ export default function Discover() {
   const [searchInput, setSearchInput] = useState('');
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  const { projects, loading, hasMore, loadMore, toggleLike } = useProjects({
+  const { projects, loading, hasMore, loadMore, toggleLike, toggleSave } = useProjects({
     category: category || undefined,
     search: search || undefined,
   });
@@ -121,6 +121,7 @@ export default function Discover() {
               <ProjectCard
                 project={project}
                 onLike={() => toggleLike(project._id)}
+                onSave={() => toggleSave(project._id)}
               />
             </motion.div>
           ))}

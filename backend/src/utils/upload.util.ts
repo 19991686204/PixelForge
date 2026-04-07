@@ -6,10 +6,13 @@ import { Request } from 'express';
 
 // 配置 Cloudinary
 cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: 'daanuflx3',
+  api_key: '268883327455487',
+  api_secret: 'JDBhrtvTsLCCsjy_U1Q2JZM2TAs',
 });
+
+// 调试日志
+console.log('Cloudinary configured:', true, true);
 
 // 配置 Cloudinary 存储
 const storage = new CloudinaryStorage({
@@ -18,20 +21,33 @@ const storage = new CloudinaryStorage({
     folder: 'pixelforge',
     format: (_: any, file: Express.Multer.File) => file.originalname.split('.').pop() || 'jpg',
     public_id: () => `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+    resource_type: (_: any, file: Express.Multer.File) => {
+      const isVideo = file.mimetype.startsWith('video/');
+      return isVideo ? 'video' : 'image';
+    },
   } as any,
 });
 
 // 文件过滤器
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // 允许的图片格式
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (extname && mimetype) {
+  const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
+  const allowedVideoTypes = /mp4|mov|avi|mkv|webm/;
+  
+  const extname = path.extname(file.originalname).toLowerCase();
+  const mimetype = file.mimetype;
+  
+  // 更宽松的检查：只要扩展名或 MIME 类型匹配即可
+  const isImage = allowedImageTypes.test(extname) || mimetype.startsWith('image/');
+  const isVideo = allowedVideoTypes.test(extname) || mimetype.startsWith('video/');
+  
+  // 调试日志
+  console.log('File filter:', file.originalname, 'ext:', extname, 'mimetype:', mimetype, 'isImage:', isImage, 'isVideo:', isVideo);
+  
+  if (isImage || isVideo) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+    cb(new Error('Invalid file type. Only images (JPEG, JPG, PNG, GIF, WEBP) and videos (MP4, MOV, AVI, MKV, WEBM) are allowed'));
   }
 };
 
@@ -40,6 +56,6 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB 限制
+    fileSize: 10 * 1024 * 1024, // 10MB 限制（Cloudinary 免费版限制）
   },
 });

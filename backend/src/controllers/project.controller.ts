@@ -15,24 +15,48 @@ export const createProject = async (req: AuthRequest, res: Response) => {
     const { title, description, category, tags, tools, client, projectUrl } = req.body;
     const files = req.files as Express.Multer.File[];
 
-    // 验证文件
-    if (!files || files.length === 0) {
-      return errorResponse(res, 'At least one image is required', 400);
+    // 调试日志
+    console.log('=== Create Project ===');
+    console.log('Files received:', files?.length);
+    if (files && files.length > 0) {
+      files.forEach((file, index) => {
+        console.log(`File ${index}:`, file.originalname, file.mimetype, file.size);
+      });
     }
 
-    // 上传图片到 Cloudinary
-    const uploadPromises = files.map(file =>
-      cloudinary.uploader.upload(file.path, {
-        folder: 'pixelforge/projects',
-        transformation: [
-          { width: 1200, height: 900, crop: 'limit' }, // 限制最大尺寸
-          { quality: 'auto' }, // 自动优化质量
-        ],
-      })
-    );
+    // 验证文件
+    if (!files || files.length === 0) {
+      console.log('Error: No files received');
+      return errorResponse(res, 'At least one image or video is required', 400);
+    }
 
-    const uploadResults = await Promise.all(uploadPromises);
-    const imageUrls = uploadResults.map(result => result.secure_url);
+    // 分离图片和视频文件
+    const imageFiles = files.filter(file => file.mimetype.startsWith('image/'));
+    const videoFiles = files.filter(file => file.mimetype.startsWith('video/'));
+
+    // 使用 Cloudinary 返回的 URL（multer-storage-cloudinary 已经上传了文件）
+    console.log('Getting image URLs from Cloudinary...');
+    const imageUrls = imageFiles.map(file => file.path);
+    console.log('Images uploaded successfully:', imageUrls.length);
+
+    // 使用 Cloudinary 返回的 URL（multer-storage-cloudinary 已经上传了文件）
+    console.log('Getting video URLs from Cloudinary...');
+    const videoUrls = videoFiles.map(file => file.path);
+    console.log('Videos uploaded successfully:', videoUrls.length);
+
+    // 确定封面图片
+    let coverImage = '';
+    if (imageUrls.length > 0) {
+      // 优先使用上传的图片
+      coverImage = imageUrls[0];
+    } else if (videoUrls.length > 0) {
+      // 如果没有图片，使用视频的第一帧作为封面
+      // Cloudinary 视频URL默认带有 ?resource_type=video，需要转换为图片格式
+      coverImage = videoUrls[0].replace('/video/', '/image/').replace('.mp4', '.jpg').replace('.mov', '.jpg').replace('.avi', '.jpg').replace('.mkv', '.jpg').replace('.webm', '.jpg');
+      console.log('Using video thumbnail as cover:', coverImage);
+    } else {
+      return errorResponse(res, 'At least one image or video is required', 400);
+    }
 
     // 创建项目
     const project = await Project.create({
@@ -43,8 +67,9 @@ export const createProject = async (req: AuthRequest, res: Response) => {
       tools: tools ? JSON.parse(tools) : [],
       client,
       projectUrl,
-      coverImage: imageUrls[0],
+      coverImage,
       images: imageUrls,
+      videos: videoUrls,
       designer: req.user?._id,
       status: 'published',
     });
@@ -52,9 +77,11 @@ export const createProject = async (req: AuthRequest, res: Response) => {
     // 填充设计师信息
     await project.populate('designer', 'username avatar');
 
+    console.log('Project created successfully:', project._id);
     successResponse(res, project, 'Project created successfully', 201);
   } catch (error: any) {
     console.error('Create project error:', error);
+    console.error('Error stack:', error.stack);
     errorResponse(res, error.message || 'Failed to create project', 500);
   }
 };
@@ -105,6 +132,12 @@ export const getAllProjects = async (req: AuthRequest, res: Response) => {
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
       .lean(); // 返回普通 JS 对象，提高性能
+
+    console.log('Get projects - Total projects:', projects.length);
+    if (projects.length > 0) {
+      console.log('Get projects - First project likes:', projects[0].likes);
+      console.log('Get projects - First project saved:', projects[0].saved);
+    }
 
     const total = await Project.countDocuments(query);
 
@@ -226,6 +259,11 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
     if (!userId) {
       return errorResponse(res, 'Authentication required', 401);
     }
+    
+    console.log('Toggle like - Project ID:', project._id);
+    console.log('Toggle like - User ID:', userId);
+    console.log('Toggle like - Current likes:', project.likes);
+    
     const likeIndex = project.likes.findIndex(id => id.toString() === userId.toString());
 
     if (likeIndex > -1) {
@@ -236,6 +274,8 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
       project.likes.push(userId as any);
     }
 
+    console.log('Toggle like - Updated likes:', project.likes);
+    
     await project.save();
 
     successResponse(res, {
@@ -264,6 +304,11 @@ export const toggleSave = async (req: AuthRequest, res: Response) => {
     if (!userId) {
       return errorResponse(res, 'Authentication required', 401);
     }
+    
+    console.log('Toggle save - Project ID:', project._id);
+    console.log('Toggle save - User ID:', userId);
+    console.log('Toggle save - Current saved:', project.saved);
+    
     const saveIndex = project.saved.findIndex(id => id.toString() === userId.toString());
 
     if (saveIndex > -1) {
@@ -274,6 +319,8 @@ export const toggleSave = async (req: AuthRequest, res: Response) => {
       project.saved.push(userId as any);
     }
 
+    console.log('Toggle save - Updated saved:', project.saved);
+    
     await project.save();
 
     successResponse(res, {
@@ -307,5 +354,59 @@ export const getTrendingProjects = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Get trending projects error:', error);
     errorResponse(res, error.message || 'Failed to fetch trending projects', 500);
+  }
+};
+
+/**
+ * 获取用户点赞的项目
+ * GET /api/projects/liked
+ */
+export const getLikedProjects = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return errorResponse(res, 'Authentication required', 401);
+    }
+
+    const projects = await Project.find({
+      status: 'published',
+      isPrivate: false,
+      likes: userId
+    })
+      .populate('designer', 'username avatar')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    successResponse(res, projects, 'Liked projects fetched successfully');
+  } catch (error: any) {
+    console.error('Get liked projects error:', error);
+    errorResponse(res, error.message || 'Failed to fetch liked projects', 500);
+  }
+};
+
+/**
+ * 获取用户收藏的项目
+ * GET /api/projects/saved
+ */
+export const getSavedProjects = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return errorResponse(res, 'Authentication required', 401);
+    }
+
+    const projects = await Project.find({
+      status: 'published',
+      isPrivate: false,
+      saved: userId
+    })
+      .populate('designer', 'username avatar')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    successResponse(res, projects, 'Saved projects fetched successfully');
+  } catch (error: any) {
+    console.error('Get saved projects error:', error);
+    errorResponse(res, error.message || 'Failed to fetch saved projects', 500);
   }
 };

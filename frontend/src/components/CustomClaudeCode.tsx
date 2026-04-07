@@ -10,13 +10,15 @@ export default function CustomClaudeCode(): React.JSX.Element {
     // 强制隐藏系统鼠标
     const hideSystemCursor = () => {
       document.body.style.cursor = 'none';
+      document.documentElement.style.cursor = 'none';
       // 防止输入框等元素恢复默认鼠标
-      const interactiveElements = document.querySelectorAll('input, textarea, select, button, a');
+      const interactiveElements = document.querySelectorAll('input, textarea, select, button, a, div, span');
       interactiveElements.forEach(el => {
         (el as HTMLElement).style.cursor = 'none';
       });
     };
 
+    // 立即隐藏系统鼠标
     hideSystemCursor();
 
     const updateMousePosition = (e: MouseEvent) => {
@@ -65,7 +67,8 @@ export default function CustomClaudeCode(): React.JSX.Element {
     return () => {
       // 恢复系统鼠标
       document.body.style.cursor = 'auto';
-      const interactiveElements = document.querySelectorAll('input, textarea, select, button, a');
+      document.documentElement.style.cursor = 'auto';
+      const interactiveElements = document.querySelectorAll('input, textarea, select, button, a, div, span');
       interactiveElements.forEach(el => {
         (el as HTMLElement).style.cursor = '';
       });
@@ -82,7 +85,7 @@ export default function CustomClaudeCode(): React.JSX.Element {
     <>
       {/* 主光标 */}
       <motion.div
-        className="fixed top-0 left-0 w-8 h-8 pointer-events-none z-50 mix-blend-difference"
+        className="fixed top-0 left-0 w-8 h-8 pointer-events-none z-[60] mix-blend-difference"
         animate={{
           x: mousePosition.x - 16,
           y: mousePosition.y - 16,
@@ -99,7 +102,7 @@ export default function CustomClaudeCode(): React.JSX.Element {
 
       {/* 跟随点 */}
       <motion.div
-        className="fixed top-0 left-0 w-2 h-2 bg-indigo-500 rounded-full pointer-events-none z-50 mix-blend-difference"
+        className="fixed top-0 left-0 w-2 h-2 bg-indigo-500 rounded-full pointer-events-none z-[60] mix-blend-difference"
         animate={{
           x: mousePosition.x - 4,
           y: mousePosition.y - 4,

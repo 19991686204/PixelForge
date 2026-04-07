@@ -9,6 +9,8 @@ import {
   toggleLike,
   toggleSave,
   getTrendingProjects,
+  getLikedProjects,
+  getSavedProjects,
 } from '../controllers/project.controller';
 import { authenticateToken, requireRole } from '../middleware/auth.middleware';
 import { isProjectOwner } from '../middleware/permission.middleware';
@@ -25,7 +27,7 @@ router.post(
   '/',
   authenticateToken,
   requireRole(['designer']),
-  upload.array('images', 20),   // 最多20张图片
+  upload.array('files', 25),   // 最多25个文件（20张图片+5个视频）
   createProject
 );
 
@@ -45,5 +47,9 @@ router.delete(
 
 router.post('/:id/like', authenticateToken, toggleLike);
 router.post('/:id/save', authenticateToken, toggleSave);
+
+// 获取用户点赞和收藏的项目
+router.get('/liked', authenticateToken, getLikedProjects);
+router.get('/saved', authenticateToken, getSavedProjects);
 
 export default router;

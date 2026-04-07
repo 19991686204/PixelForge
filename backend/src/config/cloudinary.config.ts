@@ -1,13 +1,10 @@
 import { v2 as cloudinary } from 'cloudinary';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 // 配置 Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name',
-  api_key: process.env.CLOUDINARY_API_KEY || 'your_api_key',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'your_api_secret',
+  cloud_name: 'daanuflx3',
+  api_key: '268883327455487',
+  api_secret: 'JDBhrtvTsLCCsjy_U1Q2JZM2TAs',
 });
 
 export default cloudinary;

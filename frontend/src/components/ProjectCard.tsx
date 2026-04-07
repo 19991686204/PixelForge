@@ -9,6 +9,7 @@ interface ProjectCardProps {
     _id: string;
     title: string;
     coverImage: string;
+    videos?: string[];
     designer: {
       _id: string;
       username: string;
@@ -33,9 +34,14 @@ export default function ProjectCard({ project, onLike, onFollow, onSave, isFollo
   const { user, isAuthenticated } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const videoUrl = project.videos && project.videos.length > 0 && project.videos[0] ? project.videos[0] : undefined;
+  const hasVideo = !!videoUrl;
 
   // 使用传入的 isLiked 属性，如果没有则根据用户状态计算
   const finalIsLiked = isLiked !== undefined ? isLiked : (user ? project.likes.includes(user.id) : false);
+  
+  // 使用传入的 isSaved 属性，如果没有则根据用户状态计算
+  const finalIsSaved = isSaved !== undefined ? isSaved : (user ? project.saved?.includes(user.id) : false);
 
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -72,16 +78,37 @@ export default function ProjectCard({ project, onLike, onFollow, onSave, isFollo
             )}
 
             {/* 项目封面 */}
-            <img
-              src={project.coverImage}
-              alt={project.title}
-              onLoad={() => setImageLoaded(true)}
-              className="w-full h-full object-cover transition-transform duration-500"
-              style={{
-                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-                opacity: imageLoaded ? 1 : 0,
-              }}
-            />
+            <div className="relative w-full h-full overflow-hidden">
+              {hasVideo && videoUrl ? (
+                <video
+                  src={videoUrl}
+                  poster={project.coverImage}
+                  className="w-full h-full object-cover"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={project.coverImage}
+                  alt={project.title}
+                  onLoad={() => setImageLoaded(true)}
+                  className="w-full h-full object-cover transition-transform duration-500"
+                  style={{
+                    transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                    opacity: imageLoaded ? 1 : 0,
+                  }}
+                />
+              )}
+              
+              {/* 视频标签 */}
+              {hasVideo && (
+                <div className="absolute top-2 right-2 px-2 py-1 rounded text-xs font-bold bg-black/50 text-white backdrop-blur-sm">
+                  VIDEO
+                </div>
+              )}
+            </div>
 
             {/* 悬停遮罩 */}
             <motion.div
@@ -193,16 +220,16 @@ export default function ProjectCard({ project, onLike, onFollow, onSave, isFollo
                     whileTap={{ scale: 0.9 }}
                     className="w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all"
                     style={{
-                      backgroundColor: isSaved ? '#f59e0b' : 'rgba(0, 0, 0, 0.5)',
+                      backgroundColor: finalIsSaved ? '#f59e0b' : 'rgba(0, 0, 0, 0.5)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                   >
                     <svg
                       className="w-5 h-5"
-                      fill={isSaved ? 'currentColor' : 'none'}
+                      fill={finalIsSaved ? 'currentColor' : 'none'}
                       stroke="currentColor"
                       viewBox="0 0 24 24"
-                      style={{ color: isSaved ? '#ffffff' : '#ffffff' }}
+                      style={{ color: finalIsSaved ? '#ffffff' : '#ffffff' }}
                     >
                       <path
                         strokeLinecap="round"
@@ -260,16 +287,37 @@ export default function ProjectCard({ project, onLike, onFollow, onSave, isFollo
             )}
 
             {/* 项目封面 */}
-            <img
-              src={project.coverImage}
-              alt={project.title}
-              onLoad={() => setImageLoaded(true)}
-              className="w-full h-full object-cover transition-transform duration-500"
-              style={{
-                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-                opacity: imageLoaded ? 1 : 0,
-              }}
-            />
+            <div className="relative w-full h-full overflow-hidden">
+              {hasVideo && videoUrl ? (
+                <video
+                  src={videoUrl}
+                  poster={project.coverImage}
+                  className="w-full h-full object-cover"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={project.coverImage}
+                  alt={project.title}
+                  onLoad={() => setImageLoaded(true)}
+                  className="w-full h-full object-cover transition-transform duration-500"
+                  style={{
+                    transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                    opacity: imageLoaded ? 1 : 0,
+                  }}
+                />
+              )}
+              
+              {/* 视频标签 */}
+              {hasVideo && (
+                <div className="absolute top-2 right-2 px-2 py-1 rounded text-xs font-bold bg-black/50 text-white backdrop-blur-sm">
+                  VIDEO
+                </div>
+              )}
+            </div>
 
             {/* 悬停遮罩 */}
             <motion.div
@@ -381,16 +429,16 @@ export default function ProjectCard({ project, onLike, onFollow, onSave, isFollo
                     whileTap={{ scale: 0.9 }}
                     className="w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all"
                     style={{
-                      backgroundColor: isSaved ? '#f59e0b' : 'rgba(0, 0, 0, 0.5)',
+                      backgroundColor: finalIsSaved ? '#f59e0b' : 'rgba(0, 0, 0, 0.5)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                   >
                     <svg
                       className="w-5 h-5"
-                      fill={isSaved ? 'currentColor' : 'none'}
+                      fill={finalIsSaved ? 'currentColor' : 'none'}
                       stroke="currentColor"
                       viewBox="0 0 24 24"
-                      style={{ color: isSaved ? '#ffffff' : '#ffffff' }}
+                      style={{ color: finalIsSaved ? '#ffffff' : '#ffffff' }}
                     >
                       <path
                         strokeLinecap="round"

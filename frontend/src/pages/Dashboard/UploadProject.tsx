@@ -30,6 +30,7 @@ export default function UploadProject() {
   });
 
   const [images, setImages] = useState<File[]>([]);
+  const [videos, setVideos] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState<any>({});
@@ -57,8 +58,8 @@ export default function UploadProject() {
       newErrors.category = 'Please select a category';
     }
 
-    if (images.length === 0) {
-      newErrors.images = 'At least one image is required';
+    if (images.length === 0 && videos.length === 0) {
+      newErrors.files = 'At least one image or video is required';
     }
 
     if (formData.projectUrl && !/^https?:\/\/.+/.test(formData.projectUrl)) {
@@ -119,8 +120,14 @@ export default function UploadProject() {
         data.append('client', formData.client);
       }
 
+      console.log('Uploading images:', images.length, 'videos:', videos.length);
+      
       images.forEach(image => {
-        data.append('images', image);
+        data.append('files', image);
+      });
+      
+      videos.forEach(video => {
+        data.append('files', video);
       });
 
       await api.post('/projects', data, {
@@ -156,24 +163,8 @@ export default function UploadProject() {
         <p style={{ color: '#6b7280' }}>Share your creative work with the community</p>
       </motion.div>
 
-      {/* 全局错误提示 */}
-      {errors.submit && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="px-4 py-3 rounded-xl mb-6 text-sm"
-          style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid #ef4444',
-            color: '#ef4444',
-          }}
-        >
-          ⚠️ {errors.submit}
-        </motion.div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* 图片上传 */}
+        {/* 图片和视频上传 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -181,17 +172,36 @@ export default function UploadProject() {
           className="rounded-2xl p-6"
           style={{ backgroundColor: '#141414', border: '1px solid #262626' }}
         >
-          <h2 className="text-xl font-semibold mb-2">Project Images</h2>
+          <h2 className="text-xl font-semibold mb-2">Project Media</h2>
           <p className="text-sm mb-6" style={{ color: '#6b7280' }}>
-            Upload up to 20 images. The first image will be used as the cover.
+            Upload up to 20 images or 5 videos. Max file size: 10MB each. The first image will be used as the cover.
           </p>
-          <ImageUploader
-            onImagesChange={setImages}
-            maxFiles={20}
-            maxSizeMB={10}
-          />
-          {errors.images && (
-            <p className="text-sm mt-2" style={{ color: '#ef4444' }}>{errors.images}</p>
+          
+          {/* 图片上传 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-3" style={{ color: '#d1d5db' }}>Images</h3>
+            <ImageUploader
+              onImagesChange={setImages}
+              maxFiles={20}
+              maxSizeMB={10}
+            />
+          </div>
+          
+          {/* 视频上传 */}
+          <div>
+            <h3 className="text-sm font-medium mb-3" style={{ color: '#d1d5db' }}>Videos</h3>
+            <ImageUploader
+              onImagesChange={setVideos}
+              maxFiles={5}
+              maxSizeMB={10}
+              allowVideos={true}
+            />
+          </div>
+          
+          {(errors.images || errors.videos || errors.files) && (
+            <p className="text-sm mt-2" style={{ color: '#ef4444' }}>
+              {errors.files || errors.images || errors.videos}
+            </p>
           )}
         </motion.div>
 
@@ -497,6 +507,22 @@ export default function UploadProject() {
                 style={{ backgroundColor: '#6366f1' }}
               />
             </div>
+          </motion.div>
+        )}
+
+        {/* 错误提示 - 移动到按钮旁边 */}
+        {errors.submit && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-3 rounded-xl text-sm mb-4"
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid #ef4444',
+              color: '#ef4444',
+            }}
+          >
+            ⚠️ {errors.submit}
           </motion.div>
         )}
 

@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, getCurrentUser, logout } from '../controllers/auth.controller';
+import { register, login, getCurrentUser, logout, forgotPassword, resetPassword } from '../controllers/auth.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = express.Router();
@@ -57,5 +57,31 @@ router.post('/logout', authenticateToken, async (req, res) => {
     });
   }
 });     // 用户登出
+
+router.post('/forgot-password', async (req, res) => {
+  try {
+    await forgotPassword(req, res);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || '发送重置链接失败',
+      errors: null,
+      timestamp: new Date().toISOString()
+    });
+  }
+});     // 忘记密码
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    await resetPassword(req, res);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || '重置密码失败',
+      errors: null,
+      timestamp: new Date().toISOString()
+    });
+  }
+});     // 重置密码
 
 export default router;

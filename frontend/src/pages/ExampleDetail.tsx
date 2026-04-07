@@ -180,9 +180,22 @@ export default function ExampleDetail() {
       if (foundAsset) {
         setAsset(foundAsset);
         setLikes(foundAsset.likes.length);
-        setIsLiked(foundAsset.likes.length > 0);
-        setIsFollowing(false); // 初始化为未关注
-        setIsSaved(false); // 初始化为未收藏
+        // 从本地存储加载状态，而不是重置
+        try {
+          const likedProjects = JSON.parse(localStorage.getItem('likedProjects') || '[]');
+          setIsLiked(likedProjects.includes(id));
+          
+          const followingDesigners = JSON.parse(localStorage.getItem('followingDesigners') || '[]');
+          setIsFollowing(followingDesigners.includes('1')); // Cloudinary 的设计师 ID
+          
+          const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
+          setIsSaved(savedProjects.includes(id));
+        } catch (error) {
+          console.error('Failed to load state from localStorage:', error);
+          setIsLiked(false);
+          setIsFollowing(false);
+          setIsSaved(false);
+        }
       }
       setLoading(false);
     }, 500);
