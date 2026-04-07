@@ -1,10 +1,10 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// 配置 Cloudinary
+// 配置 Cloudinary - 从环境变量读取
 cloudinary.config({
-  cloud_name: 'daanuflx3',
-  api_key: '268883327455487',
-  api_secret: 'JDBhrtvTsLCCsjy_U1Q2JZM2TAs',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export default cloudinary;
