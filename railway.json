@@ -1,8 +1,1 @@
-{
-  "build": {
-    "rootDirectory": "backend"
-  },
-  "deploy": {
-    "startCommand": "npm run start"
-  }
-}
+{ "build": { "rootDirectory": "backend" }, "deploy": { "startCommand": "cd backend && npm run start" } } 
