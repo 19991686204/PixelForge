@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+dotenv.config();
 import session from 'express-session';
 import path from 'path';
 import passport from './config/passport.config';
@@ -17,7 +18,6 @@ import notificationRoutes from './routes/notification.routes';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { requestLogger } from './middleware/logger.middleware';
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
