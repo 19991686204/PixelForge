@@ -1,1 +1,1 @@
-{ "build": { "rootDirectory": "backend" }, "deploy": { "startCommand": "cd backend && npm run start" } } 
+{ "build": { "rootDirectory": "backend", "buildCommand": "npm install && npm run build" }, "deploy": { "startCommand": "node dist/server.js" } } 
