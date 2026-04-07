@@ -1,7 +1,7 @@
 import axios from 'axios';
 //创建axios实例
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.REACT_APP_API_URL || 'https://pixelforge-production-b423.up.railway.app/api',
   timeout: 60000, // 60秒超时，用于处理大文件上传
 });
 //请求拦截器：自动添加token
