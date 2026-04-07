@@ -1,1 +1,8 @@
-{ "rootDirectory": "backend" } 
+{
+  "build": {
+    "rootDirectory": "backend"
+  },
+  "deploy": {
+    "startCommand": "npm run start"
+  }
+}
